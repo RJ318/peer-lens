@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peerlens-dashboard"
+version = "0.1.0"
+description = "Plotly Dash front end for the Peer Lens API"
+requires-python = ">=3.11"
+dependencies = [
+    "dash>=4.0",
+    "pandas>=2.2",
+    "plotly>=6.0",
+    "requests>=2.32",
+    "gunicorn>=23.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+peerlens-dashboard = "peerlens_dashboard.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+peerlens_dashboard = ["assets/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
