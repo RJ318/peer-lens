@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peer Lens</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Peer Lens compares six years of SEC-reported fundamentals for 20 public companies within their sector peer groups. Java, Spring Boot, SQL, Python, Plotly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column read like a filing cover sheet. Name and thesis, the working demo, what the data taught, how it is built. */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #0f1a2a;
+  --ink-2: #44505f;
+  --muted: #6b7686;
+  --rule: #dce2ea;
+  --accent: #1c5db5;
+  --accent-ink: #ffffff;
+  --mark: #2a78d6;
+  --warn-bg: #fff5d9;
+  --warn-ink: #5f4300;
+  --warn-rule: #d99a00;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  --font-display: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: clamp(2.25rem, 1.6rem + 2.6vw, 3.25rem);
+  --radius: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151c26; --ink: #e7ecf3; --ink-2: #b6c0cd; --muted: #8b96a5; --rule: #273241;
+    --accent: #6aa6f3; --accent-ink: #0e131a; --mark: #3987e5;
+    --warn-bg: #2a2412; --warn-ink: #f1d690; --warn-rule: #c98500;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --ink: #e7ecf3; --ink-2: #b6c0cd; --muted: #8b96a5; --rule: #273241;
+  --accent: #6aa6f3; --accent-ink: #0e131a; --mark: #3987e5;
+  --warn-bg: #2a2412; --warn-ink: #f1d690; --warn-rule: #c98500;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { display: grid; gap: 64px; padding-block: 40px 64px; }
+
+/* Cover-sheet header strip */
+.sheet {
+  display: flex; flex-wrap: wrap; gap: 8px 28px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted);
+}
+.sheet b { font-weight: 500; color: var(--ink-2); letter-spacing: 0.06em; margin-right: 8px; }
+
+/* Hero */
+.hero { display: grid; gap: 16px; }
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display); font-weight: 700; font-size: var(--step-3);
+  letter-spacing: -0.025em; line-height: 1.05;
+}
+.lead { margin: 0; max-width: 62ch; font-size: var(--step-1); color: var(--ink-2); text-wrap: pretty; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-top: 4px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-ink);
+  font-weight: 600; text-decoration: none;
+}
+.btn:hover { filter: brightness(1.08); }
+.facts {
+  display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 8px 0 0; padding: 0; list-style: none;
+  color: var(--ink-2); font-size: 0.875rem;
+}
+.facts strong { font-family: var(--font-mono); font-weight: 500; color: var(--ink); margin-right: 4px; }
+
+/* Demo panel: the one bordered object on the page */
+.demo {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 20px;
+  display: grid; gap: 16px;
+  min-width: 0;
+}
+.demo-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
+.demo-head h2 { margin: 0; font-size: var(--step-1); }
+.stamp { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; }
+.control { display: grid; gap: 6px; min-width: 0; }
+.label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font: inherit; font-size: 0.875rem; font-weight: 500;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+select {
+  font: inherit; font-size: 0.875rem; padding: 7px 32px 7px 10px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.note { margin: 0; color: var(--ink-2); font-size: 0.875rem; max-width: 75ch; }
+.caveat {
+  margin: 0; padding: 8px 12px; border-left: 3px solid var(--warn-rule);
+  background: var(--warn-bg); color: var(--warn-ink); font-size: 0.875rem; border-radius: 0 var(--radius) var(--radius) 0;
+}
+.charts { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 900px) { .charts { grid-template-columns: 5fr 6fr; } }
+.chart { min-width: 0; display: grid; gap: 4px; }
+.chart h3 { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
+.plot { width: 100%; min-height: 300px; }
+.table-wrap { overflow-x: auto; min-width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; white-space: nowrap; }
+th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+td .co { color: var(--muted); margin-left: 6px; }
+td.mono { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink-2); }
+.status { margin: 0; color: var(--ink-2); }
+
+/* Sections */
+section > h2 {
+  margin: 0 0 20px; font-size: var(--step-2); letter-spacing: -0.01em; text-wrap: balance;
+}
+.intro { margin: -8px 0 24px; max-width: 65ch; color: var(--ink-2); }
+
+.findings { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.finding {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 32px;
+  padding-block: 20px; border-bottom: 1px solid var(--rule);
+}
+@media (min-width: 760px) { .finding { grid-template-columns: 220px minmax(0, 1fr); } }
+.finding h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
+.finding .who { display: block; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.02em; }
+.finding p { margin: 0; max-width: 65ch; color: var(--ink-2); }
+.finding p + p { margin-top: 8px; }
+.delta { font-family: var(--font-mono); font-size: 0.875rem; color: var(--ink); white-space: nowrap; }
+.verified {
+  margin: 20px 0 0; padding: 14px 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--rule); max-width: 75ch;
+}
+.verified strong { font-family: var(--font-mono); font-weight: 500; }
+
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.node {
+  flex: 1 1 150px; min-width: 0;
+  padding: 12px 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface);
+  display: grid; gap: 2px; align-content: start;
+}
+.node b { font-size: 0.9375rem; }
+.node span { font-size: 0.8125rem; color: var(--ink-2); }
+.node code { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.arrow { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+@media (max-width: 759px) { .flow { flex-direction: column; } .node { flex: none; } .arrow { transform: rotate(90deg); margin-left: 16px; line-height: 1; } }
+@media (max-width: 599px) { .col-end, td .co, .filed { display: none; } th, td { padding: 8px 6px; } }
+
+.stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px 32px; margin: 28px 0 0; }
+.stack div { min-width: 0; }
+.stack dt { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stack dd { margin: 4px 0 0; color: var(--ink-2); }
+
+pre {
+  margin: 0; padding: 14px 16px; overflow-x: auto; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.7; color: var(--ink);
+}
+.run { display: grid; gap: 12px; max-width: 75ch; }
+.run p { margin: 0; color: var(--ink-2); }
+
+footer { border-top: 1px solid var(--rule); padding-block: 24px 40px; color: var(--muted); font-size: 0.8125rem; }
+footer p { margin: 0; max-width: 80ch; }
+footer p + p { margin-top: 6px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="sheet" aria-label="Project summary">
+    <span><b>SOURCE</b>SEC EDGAR · XBRL company facts</span>
+    <span><b>FORMS</b>10-K, 10-K/A</span>
+    <span><b>COVERAGE</b>20 filers · 4 peer groups · 6 fiscal years</span>
+    <span><b>SNAPSHOT</b><span id="sheet-date">2026-10-25</span></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero" aria-labelledby="title">
+    <h1 id="title">Peer Lens</h1>
+    <p class="lead">Six years of SEC-reported revenue, earnings, and cash flow for 20 public companies, compared within their sector peer groups. A Java and Spring Boot service loads and cleans the filings; the charts below show its output.</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/RJ318/peer-lens">View the code on GitHub</a>
+      <a href="https://github.com/RJ318/peer-lens/blob/main/docs/DATA-NOTES.md">Read the data notes</a>
+    </div>
+    <ul class="facts">
+      <li><strong>75</strong>automated tests</li>
+      <li><strong>324</strong>figures verified against the SEC</li>
+      <li><strong>0</strong>discrepancies</li>
+    </ul>
+  </section>
+
+  <section class="demo" aria-labelledby="demo-title">
+    <div class="demo-head">
+      <h2 id="demo-title">Compare a peer group</h2>
+      <span class="stamp" id="stamp">Snapshot of the Peer Lens API</span>
+    </div>
+    <div class="controls">
+      <div class="control">
+        <span class="label" id="sector-label">Peer group</span>
+        <div class="chips" id="sector" role="group" aria-labelledby="sector-label"></div>
+      </div>
+      <div class="control">
+        <label class="label" for="metric">Metric</label>
+        <select id="metric"></select>
+      </div>
+    </div>
+    <p class="note" id="metric-note"></p>
+    <p class="caveat" id="caveat" hidden></p>
+    <p class="status" id="status" hidden></p>
+    <div class="charts">
+      <div class="chart">
+        <h3>Latest fiscal year</h3>
+        <div class="plot" id="bar"></div>
+      </div>
+      <div class="chart">
+        <h3>Trend by fiscal year</h3>
+        <div class="plot" id="trend"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Company</th><th class="num" id="value-head">Value</th><th class="num">Fiscal year</th><th class="col-end">Period end</th><th>Source filing</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="learned">
+    <h2 id="learned">What the data taught me</h2>
+    <p class="intro">SEC data is public, but it is not clean. Each of these was a real error in an early version, found while checking the output against the filings, and each fix has a test that keeps it from coming back.</p>
+    <ul class="findings">
+      <li class="finding">
+        <h3><span class="who">PFIZER</span>Two concepts in one filing</h3>
+        <div>
+          <p>One 10-K tagged product sales with one XBRL concept and total revenue with another. Trying concepts in a fixed order picked the smaller one, so 2021 to 2023 revenue read <span class="delta">$7.6B to $8.6B</span> low.</p>
+          <p>Now the most recently filed value wins for each year, and concept priority only breaks ties within the same filing.</p>
+        </div>
+      </li>
+      <li class="finding">
+        <h3><span class="who">KIMBERLY-CLARK</span>Restatements distort growth</h3>
+        <div>
+          <p>A later filing restated 2023 for a divested business while 2022 stayed on the old basis. Comparing the two showed 2023 growth of <span class="delta">−15.0%</span>; like for like it was <span class="delta">+1.3%</span>.</p>
+          <p>Growth is now measured inside the most recent single filing that reports both years.</p>
+        </div>
+      </li>
+      <li class="finding">
+        <h3><span class="who">JOHNSON &amp; JOHNSON</span>Fiscal years ending in January</h3>
+        <div>
+          <p>Its 52- and 53-week years sometimes end on January 1, which the company labels as the prior year. Using the calendar year produced two fiscal 2023 rows.</p>
+          <p>The label is now the year of the period end minus seven days, which still labels NVIDIA's year ending January 25, 2026 as fiscal 2026.</p>
+        </div>
+      </li>
+      <li class="finding">
+        <h3><span class="who">U.S. BANCORP · PNC</span>Gaps and missing tags</h3>
+        <div>
+          <p>A three-year gap in one bank's revenue tags misaligned the six-year window, and another bank reported no standard net income tag while the load still reported success.</p>
+          <p>All metrics now share one year window, and a company missing a metric is flagged <span class="delta">INCOMPLETE</span> instead of counted as loaded.</p>
+        </div>
+      </li>
+    </ul>
+    <p class="verified">The final check compares every stored figure with the value the SEC itself selected for that period, a mechanism the service never uses: <strong>324</strong> figures and <strong>120</strong> growth rates, <strong>0</strong> discrepancies.</p>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="flow" aria-label="Data flow">
+      <li class="node"><b>SEC EDGAR</b><span>XBRL company facts for each filer</span><code>data.sec.gov</code></li>
+      <li class="arrow" aria-hidden="true">→</li>
+      <li class="node"><b>Ingestion</b><span>Rate-limited client, retries, one transaction per company</span><code>Spring Boot</code></li>
+      <li class="arrow" aria-hidden="true">→</li>
+      <li class="node"><b>Database</b><span>One row per company, metric, and year, with its filing</span><code>PostgreSQL · Flyway</code></li>
+      <li class="arrow" aria-hidden="true">→</li>
+      <li class="node"><b>REST API</b><span>Peer comparisons and history as JSON</span><code>Spring Boot</code></li>
+      <li class="arrow" aria-hidden="true">→</li>
+      <li class="node"><b>Dashboard</b><span>Charts and tables for each peer group</span><code>Plotly Dash</code></li>
+    </ol>
+    <dl class="stack">
+      <div><dt>Back end</dt><dd>Java 21, Spring Boot, Spring JDBC, Apache HttpClient, RFC 9457 error responses</dd></div>
+      <div><dt>Data</dt><dd>PostgreSQL in Docker, H2 for local runs and tests, Flyway migrations, an audit record of every load</dd></div>
+      <div><dt>Front end</dt><dd>Python, Plotly Dash, pandas; this page uses Plotly.js on a snapshot of the API</dd></div>
+      <div><dt>Quality</dt><dd>75 tests (JUnit 5, pytest), GitHub Actions CI, Docker Compose, an operations runbook</dd></div>
+    </dl>
+  </section>
+
+  <section aria-labelledby="run">
+    <h2 id="run">Run it yourself</h2>
+    <div class="run">
+      <p>You need Docker. The SEC asks every client to identify itself, so set your name and email first.</p>
+      <pre><code>git clone https://github.com/RJ318/peer-lens.git
+cd peer-lens
+cp .env.example .env      # set SEC_USER_AGENT="Your Name you@example.com"
+docker compose up --build # dashboard on :8050, API on :8080</code></pre>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>Built by Ravi Jethva, with Claude as an AI coding partner. <a href="https://github.com/RJ318">github.com/RJ318</a></p>
+  <p>A personal research project using public SEC data. Not investment advice, and not affiliated with any company shown.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-basic-dist-min@3.5.1/plotly-basic.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var METRICS = [
+    { key: "netMargin", label: "Net margin", kind: "percent", note: "Net income divided by revenue." },
+    { key: "revenue", label: "Revenue", kind: "currency", note: "Total revenue for the fiscal year (net revenue for banks)." },
+    { key: "revenueGrowth", label: "Revenue growth", kind: "percent", note: "Change versus the prior fiscal year, measured within one filing so restatements do not distort it." },
+    { key: "netIncome", label: "Net income", kind: "currency", note: "Net income attributable to the company." },
+    { key: "operatingCashFlow", label: "Operating cash flow", kind: "currency", note: "Net cash provided by operating activities." },
+    { key: "cashConversion", label: "Cash conversion", kind: "ratio", note: "Operating cash flow divided by net income." }
+  ];
+  var CAVEATS = {
+    "banks|revenue": "Bank revenue is net revenue: interest income minus interest expense, plus fee income.",
+    "banks|operatingCashFlow": "Bank operating cash flow swings with trading and lending activity, so it says little about earnings quality for banks.",
+    "banks|cashConversion": "Cash conversion is not meaningful for banks, because their operating cash flow moves with trading and lending activity rather than with earnings."
+  };
+
+  var state = { data: null, sector: null, metric: "netMargin" };
+  var el = function (id) { return document.getElementById(id); };
+
+  function metricOf(key) { return METRICS.filter(function (m) { return m.key === key; })[0]; }
+
+  function format(kind, v) {
+    if (v === null || v === undefined) return "n/a";
+    if (kind === "percent") return (v * 100).toFixed(1) + "%";
+    if (kind === "ratio") return v.toFixed(2) + "x";
+    var sign = v < 0 ? "-" : "", a = Math.abs(v);
+    if (a >= 1e12) return sign + "$" + (a / 1e12).toFixed(1) + "T";
+    if (a >= 1e9) return sign + "$" + (a / 1e9).toFixed(1) + "B";
+    if (a >= 1e6) return sign + "$" + (a / 1e6).toFixed(1) + "M";
+    return sign + "$" + a.toLocaleString("en-US");
+  }
+  function scaled(kind, v) { return kind === "currency" ? v / 1e9 : v; }
+
+  function tokens() {
+    var s = getComputedStyle(document.documentElement);
+    var t = function (n) { return s.getPropertyValue(n).trim(); };
+    return {
+      surface: t("--surface"), ink: t("--ink"), ink2: t("--ink-2"), muted: t("--muted"), rule: t("--rule"),
+      mark: t("--mark"), series: [t("--s1"), t("--s2"), t("--s3"), t("--s4"), t("--s5")]
+    };
+  }
+
+  function axis(kind) {
+    if (kind === "currency") return { tickformat: ",.0f", ticksuffix: "", title: "US$ billions", hover: "$%{VAL:,.1f}B" };
+    if (kind === "percent") return { tickformat: ".0%", ticksuffix: "", title: "", hover: "%{VAL:.1%}" };
+    return { tickformat: ",.1f", ticksuffix: "x", title: "", hover: "%{VAL:.2f}x" };
+  }
+
+  function baseLayout(t, height) {
+    return {
+      height: height,
+      margin: { l: 8, r: 24, t: 8, b: 8 },
+      paper_bgcolor: t.surface, plot_bgcolor: t.surface,
+      font: { family: '"Public Sans", "Helvetica Neue", Arial, sans-serif', color: t.ink, size: 12 },
+      hoverlabel: { bgcolor: t.surface, bordercolor: t.rule, font: { color: t.ink, family: '"Public Sans", Arial, sans-serif' } },
+      showlegend: false
+    };
+  }
+
+  function sectorData() {
+    return state.data.sectors.filter(function (s) { return s.key === state.sector; })[0];
+  }
+
+  function latestRows(sector, key) {
+    return sector.companies.map(function (c) {
+      var y = c.years[c.years.length - 1] || {};
+      var src = y.src ? (y.src[key] || y.src.revenue) : null;
+      return { ticker: c.ticker, name: c.name, fy: y.fy, end: y.end, value: y[key] === undefined ? null : y[key], src: src };
+    });
+  }
+
+  function barRange(values) {
+    var lo = Math.min(0, Math.min.apply(null, values)), hi = Math.max(0, Math.max.apply(null, values));
+    var span = (hi - lo) || 1;
+    return [lo < 0 ? lo - 0.3 * span : lo, hi > 0 ? hi + 0.2 * span : hi];
+  }
+
+  function renderBar(t, sector, m) {
+    var rows = latestRows(sector, m.key)
+      .filter(function (r) { return r.value !== null; })
+      .sort(function (a, b) { return b.value - a.value; });
+    var x = rows.map(function (r) { return scaled(m.kind, r.value); });
+    var ax = axis(m.kind);
+    var narrow = window.innerWidth < 600;
+    Plotly.react("bar", [{
+      type: "bar", orientation: "h",
+      x: x, y: rows.map(function (r) { return r.ticker; }),
+      text: rows.map(function (r) { return format(m.kind, r.value); }),
+      textposition: "outside", cliponaxis: false,
+      textfont: { family: '"IBM Plex Mono", monospace', color: t.ink, size: 12 },
+      marker: { color: t.mark, cornerradius: 4 },
+      customdata: rows.map(function (r) { return [r.name, r.fy, r.end]; }),
+      hovertemplate: "<b>%{customdata[0]}</b><br>FY%{customdata[1]}, ended %{customdata[2]}<br>%{text}<extra></extra>"
+    }], Object.assign(baseLayout(t, 60 + 44 * Math.max(rows.length, 1)), {
+      bargap: 0.38,
+      xaxis: {
+        range: barRange(x), tickformat: ax.tickformat, ticksuffix: ax.ticksuffix,
+        title: { text: ax.title, font: { size: 11, color: t.muted } },
+        gridcolor: t.rule, zerolinecolor: t.muted, linecolor: t.rule, tickfont: { color: t.muted, size: 11 },
+        nticks: narrow ? 4 : 7, fixedrange: true, automargin: true
+      },
+      yaxis: { autorange: "reversed", tickfont: { color: t.ink2, family: '"IBM Plex Mono", monospace', size: 12 }, fixedrange: true, automargin: true }
+    }), { displayModeBar: false, responsive: true });
+  }
+
+  function renderTrend(t, sector, m) {
+    var ax = axis(m.kind);
+    var traces = sector.companies.map(function (c, i) {
+      var pts = c.years.filter(function (y) { return y[m.key] !== null && y[m.key] !== undefined; });
+      var color = t.series[i % t.series.length];
+      return {
+        type: "scatter", mode: "lines+markers", name: c.ticker,
+        x: pts.map(function (y) { return y.fy; }),
+        y: pts.map(function (y) { return scaled(m.kind, y[m.key]); }),
+        line: { color: color, width: 2 },
+        marker: { color: color, size: 7, line: { color: t.surface, width: 1.5 } },
+        customdata: pts.map(function (y) { return [c.name, y.end]; }),
+        hovertemplate: "<b>%{customdata[0]}</b><br>FY%{x}, ended %{customdata[1]}<br>" + ax.hover.replace("VAL", "y") + "<extra></extra>"
+      };
+    });
+    Plotly.react("trend", traces, Object.assign(baseLayout(t, 320), {
+      showlegend: true,
+      legend: { orientation: "h", x: 0, y: 1.12, xanchor: "left", font: { color: t.ink2, family: '"IBM Plex Mono", monospace', size: 11 } },
+      margin: { l: 8, r: 16, t: 36, b: 8 },
+      hovermode: "closest",
+      xaxis: { dtick: 1, tickformat: "d", showgrid: false, linecolor: t.rule, tickfont: { color: t.muted, size: 11 }, fixedrange: true, automargin: true },
+      yaxis: {
+        tickformat: ax.tickformat, ticksuffix: ax.ticksuffix,
+        title: { text: ax.title, font: { size: 11, color: t.muted } },
+        gridcolor: t.rule, zerolinecolor: t.muted, tickfont: { color: t.muted, size: 11 }, fixedrange: true, automargin: true
+      }
+    }), { displayModeBar: false, responsive: true });
+  }
+
+  function renderTable(sector, m) {
+    var rows = latestRows(sector, m.key).sort(function (a, b) {
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      return b.value - a.value;
+    });
+    el("value-head").textContent = m.label;
+    var body = el("rows");
+    body.textContent = "";
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      var co = document.createElement("td");
+      var strong = document.createElement("strong");
+      strong.textContent = r.ticker;
+      var name = document.createElement("span");
+      name.className = "co";
+      name.textContent = r.name;
+      co.append(strong, name);
+      var fy = document.createElement("td"); fy.className = "num"; fy.textContent = r.fy || "n/a";
+      var end = document.createElement("td"); end.className = "mono col-end"; end.textContent = r.end || "n/a";
+      var val = document.createElement("td"); val.className = "num"; val.textContent = format(m.kind, r.value);
+      var src = document.createElement("td");
+      if (r.src && r.src.url) {
+        var a = document.createElement("a");
+        a.href = r.src.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.textContent = r.src.form;
+        var filed = document.createElement("span");
+        filed.className = "filed";
+        filed.textContent = ", filed " + r.src.filed;
+        a.append(filed);
+        src.append(a);
+      } else { src.textContent = "n/a"; }
+      tr.append(co, val, fy, end, src);
+      body.append(tr);
+    });
+  }
+
+  function render() {
+    if (!state.data || typeof Plotly === "undefined") return;
+    var sector = sectorData(), m = metricOf(state.metric), t = tokens();
+    var missing = latestRows(sector, m.key).filter(function (r) { return r.value === null; }).map(function (r) { return r.ticker; });
+    el("metric-note").textContent = m.note + (missing.length ? " Not reported for " + missing.join(", ") + "." : "");
+    var caveat = CAVEATS[state.sector + "|" + m.key];
+    el("caveat").textContent = caveat || "";
+    el("caveat").hidden = !caveat;
+    Array.prototype.forEach.call(el("sector").children, function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.key === state.sector));
+    });
+    renderBar(t, sector, m);
+    renderTrend(t, sector, m);
+    renderTable(sector, m);
+  }
+
+  function buildControls() {
+    state.data.sectors.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.dataset.key = s.key; b.id = "sector-" + s.key;
+      b.textContent = s.label;
+      b.addEventListener("click", function () { state.sector = s.key; render(); });
+      el("sector").append(b);
+    });
+    METRICS.forEach(function (m) {
+      var o = document.createElement("option");
+      o.value = m.key; o.textContent = m.label;
+      el("metric").append(o);
+    });
+    el("metric").value = state.metric;
+    el("metric").addEventListener("change", function (e) { state.metric = e.target.value; render(); });
+  }
+
+  function showError(message) {
+    el("status").textContent = message;
+    el("status").hidden = false;
+  }
+
+  if (typeof Plotly === "undefined") {
+    showError("The charting library did not load. Check your connection and refresh the page.");
+  }
+
+  fetch("data/peer-lens.json")
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (data) {
+      state.data = data;
+      state.sector = data.sectors[0].key;
+      el("stamp").textContent = "Snapshot of the Peer Lens API, " + data.generatedAt;
+      el("sheet-date").textContent = data.generatedAt;
+      buildControls();
+      render();
+    })
+    .catch(function () {
+      showError("The data snapshot did not load. Refresh the page, or view the code on GitHub.");
+    });
+
+  var rerender = function () { render(); };
+  try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch (e) {}
+  new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  var resizeTimer;
+  window.addEventListener("resize", function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(rerender, 150); });
+})();
+</script>
+</body>
+</html>
