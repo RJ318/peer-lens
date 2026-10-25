@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: peerlens
+      POSTGRES_USER: peerlens
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-peerlens-local}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peerlens -d peerlens"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/peerlens
+      SPRING_DATASOURCE_USERNAME: peerlens
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-peerlens-local}
+      SEC_USER_AGENT: ${SEC_USER_AGENT:?Set SEC_USER_AGENT in .env to your name and email, as the SEC requires}
+      PEERLENS_ADMIN_TOKEN: ${PEERLENS_ADMIN_TOKEN:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:
+    build: ./dashboard
+    environment:
+      PEERLENS_API_URL: http://api:8080
+    ports:
+      - "8050:8050"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
