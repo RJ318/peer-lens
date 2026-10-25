@@ -1,0 +1,25 @@
+{
+  "cik": 5555555,
+  "entityName": "Partial Data Co",
+  "facts": {
+    "us-gaap": {
+      "Revenues": {
+        "label": "Revenues",
+        "units": {
+          "USD": [
+            { "start": "2023-01-01", "end": "2023-12-31", "val": 400, "accn": "0005555555-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15" },
+            { "start": "2024-01-01", "end": "2024-12-31", "val": 440, "accn": "0005555555-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15" }
+          ]
+        }
+      },
+      "ProfitLoss": {
+        "label": "Net income including noncontrolling interests (not a configured concept)",
+        "units": {
+          "USD": [
+            { "start": "2024-01-01", "end": "2024-12-31", "val": 50, "accn": "0005555555-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15" }
+          ]
+        }
+      }
+    }
+  }
+}

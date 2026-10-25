@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: peer-lens
+  datasource:
+    # Local default: an H2 file database, so the service runs with no setup.
+    # Docker Compose overrides these with PostgreSQL.
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/peerlens;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: always
+  mvc:
+    # Framework errors (unknown path, wrong method) also come back as RFC 9457 problem details.
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+peerlens:
+  sec:
+    data-base-url: https://data.sec.gov
+    files-base-url: https://www.sec.gov
+    # Required by the SEC fair-access policy: your name and a contact email.
+    user-agent: ${SEC_USER_AGENT:}
+    min-request-interval: 150ms
+    max-attempts: 4
+    initial-backoff: 1s
+    timeout: 30s
+  ingest:
+    run-on-startup-if-empty: true
+    cron: "0 30 6 * * *"
+    zone: America/New_York
+    years-to-keep: 6
+  admin:
+    token: ${PEERLENS_ADMIN_TOKEN:}
+  concepts:
+    # Priority only matters between values in the same filing; the most recently filed value wins otherwise.
+    # Revenues comes first because some companies (Pfizer, for one) tag product revenue alone with the
+    # contract-revenue concept and total revenue with Revenues in the same filing.
+    revenue:
+      - Revenues
+      - RevenueFromContractWithCustomerExcludingAssessedTax
+      - SalesRevenueNet
+      - RevenueFromContractWithCustomerIncludingAssessedTax
+    net-income:
+      - NetIncomeLoss
+    operating-cash-flow:
+      - NetCashProvidedByUsedInOperatingActivities
+      - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations
+  sectors:
+    technology:
+      label: Technology
+      tickers: [AAPL, MSFT, NVDA, ORCL, CSCO]
+    banks:
+      label: Banks
+      tickers: [JPM, BAC, WFC, C, GS]
+      # Banks report net revenue (interest income net of interest expense, plus fees).
+      # RevenueFromContractWithCustomer is only fee income for a bank, so it is deliberately excluded.
+      revenue-concepts:
+        - RevenuesNetOfInterestExpense
+        - Revenues
+    pharma:
+      label: Pharmaceuticals
+      tickers: [JNJ, PFE, MRK, ABBV, LLY]
+    staples:
+      label: Consumer Staples
+      tickers: [PG, KO, PEP, CL, KMB]
